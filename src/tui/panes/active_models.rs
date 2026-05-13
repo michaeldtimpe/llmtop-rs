@@ -27,22 +27,18 @@ pub fn render(f: &mut Frame, area: Rect, models: &[ModelEntry], total_ram: u64) 
         Span::styled(format!("{:>8}", "Size"), style::LABEL),
         Span::styled(format!("{:>10}", "Resident"), style::LABEL),
         Span::raw("  "),
-        Span::styled("Residency", style::LABEL),
+        Span::styled(format!("{:>6}", "% RAM"), style::LABEL),
+        Span::raw("  "),
+        Span::styled(format!("{:>6}", "% Res"), style::LABEL),
     ]));
 
-    let mut total_size: u64 = 0;
-    let mut total_resident: u64 = 0;
-
     for m in models {
-        if let Some(sz) = m.size_bytes {
-            total_size += sz;
-        }
-        if let Some(rs) = m.resident_bytes {
-            total_resident += rs;
-        }
-
-        let pct_opt = match (m.size_bytes, m.resident_bytes) {
+        let residency_pct = match (m.size_bytes, m.resident_bytes) {
             (Some(sz), Some(rs)) if sz > 0 => Some(rs as f64 / sz as f64),
+            _ => None,
+        };
+        let ram_pct = match m.resident_bytes {
+            Some(rs) if total_ram > 0 => Some(rs as f64 / total_ram as f64),
             _ => None,
         };
 
@@ -63,32 +59,20 @@ pub fn render(f: &mut Frame, area: Rect, models: &[ModelEntry], total_ram: u64) 
             Span::styled(format!("{resident_str:>10}"), style::VALUE),
             Span::raw("  "),
         ];
-        if let Some(pct) = pct_opt {
-            let bar = residency_bar(pct, 10);
-            let bar_color = style::residency_color(pct);
-            spans.push(Span::styled(bar, Style::new().fg(bar_color)));
-            spans.push(Span::styled(format!(" {:>3.0}%", pct * 100.0), Style::new().fg(bar_color)));
+        if let Some(rp) = ram_pct {
+            let c = style::bar_color(rp.clamp(0.0, 1.0) as f32);
+            spans.push(Span::styled(format!("{:>5.1}%", rp * 100.0), Style::new().fg(c)));
         } else {
-            spans.push(Span::styled("          —", style::LABEL));
+            spans.push(Span::styled("     —", style::LABEL));
+        }
+        spans.push(Span::raw("  "));
+        if let Some(pct) = residency_pct {
+            let c = style::residency_color(pct);
+            spans.push(Span::styled(format!("{:>5.0}%", pct * 100.0), Style::new().fg(c)));
+        } else {
+            spans.push(Span::styled("     —", style::LABEL));
         }
         lines.push(Line::from(spans));
-    }
-
-    // Total row
-    if !models.is_empty() {
-        let ram_pct = if total_ram > 0 {
-            total_resident as f64 / total_ram as f64 * 100.0
-        } else {
-            0.0
-        };
-        lines.push(Line::from(vec![
-            Span::styled(format!("{:─<8}", ""), style::LABEL),
-            Span::styled(format!("{:<24}", "TOTAL"), style::HIGHLIGHT),
-            Span::styled(format!("{:>8}", fmt_bytes(total_size)), style::HIGHLIGHT),
-            Span::styled(format!("{:>10}", fmt_bytes(total_resident)), style::HIGHLIGHT),
-            Span::raw("  "),
-            Span::styled(format!("{ram_pct:>5.1}% RAM"), style::HIGHLIGHT),
-        ]));
     }
 
     if models.is_empty() {
@@ -100,10 +84,4 @@ pub fn render(f: &mut Frame, area: Rect, models: &[ModelEntry], total_ram: u64) 
 
     let para = Paragraph::new(lines);
     f.render_widget(para, inner);
-}
-
-fn residency_bar(pct: f64, width: usize) -> String {
-    let filled = (pct * width as f64).round() as usize;
-    let empty = width.saturating_sub(filled);
-    format!("{}{}", "█".repeat(filled), "░".repeat(empty))
 }
