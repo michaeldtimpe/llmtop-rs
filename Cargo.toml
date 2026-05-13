@@ -1,0 +1,39 @@
+[package]
+name = "llmtop-rs"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Realtime memory, SoC, and model-residency monitor for Apple Silicon"
+license = "Apache-2.0"
+
+[dependencies]
+anyhow = "1"
+arc-swap = "1"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive", "env"] }
+crossterm = "0.28"
+libc = "0.2"
+ratatui = "0.30"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sysctl = "0.6"
+sysinfo = "0.34"
+ureq = { version = "3", features = ["json"] }
+
+macmon = "0.7"
+
+[lib]
+name = "llmtop"
+path = "src/lib.rs"
+
+[[bin]]
+name = "llmtop"
+path = "src/main.rs"
+
+[[bin]]
+name = "probe-fds"
+path = "src/bin/probe_fds.rs"
+
+[[bin]]
+name = "probe-raw"
+path = "src/bin/probe_raw.rs"
