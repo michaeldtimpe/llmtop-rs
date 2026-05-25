@@ -36,16 +36,23 @@ pub struct ModelEntry {
 pub struct ModelDetector {
     pub ollama_port: u16,
     pub omlx_port: Option<u16>,
+    pub omlx_api_key: Option<String>,
     pub lmstudio_port: u16,
     page_size: u64,
 }
 
 impl ModelDetector {
-    pub fn new(ollama_port: u16, omlx_port: Option<u16>, lmstudio_port: u16) -> Self {
+    pub fn new(
+        ollama_port: u16,
+        omlx_port: Option<u16>,
+        omlx_api_key: Option<String>,
+        lmstudio_port: u16,
+    ) -> Self {
         let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as u64 };
         Self {
             ollama_port,
             omlx_port,
+            omlx_api_key,
             lmstudio_port,
             page_size,
         }
@@ -58,13 +65,14 @@ impl ModelDetector {
         for m in api::query_ollama(self.ollama_port) {
             push_unique(&mut models, from_api(m, ModelSource::Ollama));
         }
+        let omlx_key = self.omlx_api_key.as_deref();
         if let Some(port) = self.omlx_port {
-            for m in api::query_omlx(port, None) {
+            for m in api::query_omlx(port, omlx_key) {
                 push_unique(&mut models, from_api(m, ModelSource::Omlx));
             }
         } else {
             for port in &[8000u16, 5741] {
-                let found = api::query_omlx(*port, None);
+                let found = api::query_omlx(*port, omlx_key);
                 if !found.is_empty() {
                     for m in found {
                         push_unique(&mut models, from_api(m, ModelSource::Omlx));

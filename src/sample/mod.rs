@@ -48,6 +48,7 @@ impl DefaultCollector {
         slow_scan_interval: f64,
         ollama_port: u16,
         omlx_port: Option<u16>,
+        omlx_api_key: Option<String>,
         lmstudio_port: u16,
     ) -> Result<Self> {
         let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as u64 };
@@ -58,7 +59,7 @@ impl DefaultCollector {
             soc_sampler,
             interval_ms,
             scanner: SysinfoScanner::new(),
-            detector: ModelDetector::new(ollama_port, omlx_port, lmstudio_port),
+            detector: ModelDetector::new(ollama_port, omlx_port, omlx_api_key, lmstudio_port),
             patterns,
             slow_scan_interval,
             last_full_scan: Instant::now() - std::time::Duration::from_secs(999),

@@ -58,4 +58,8 @@ pub struct Args {
     /// Override omlx port
     #[arg(long)]
     pub omlx_port: Option<u16>,
+
+    /// omlx API key (defaults to $OMLX_API_KEY)
+    #[arg(long, env = "OMLX_API_KEY")]
+    pub omlx_api_key: Option<String>,
 }

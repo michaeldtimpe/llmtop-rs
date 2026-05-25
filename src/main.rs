@@ -18,6 +18,7 @@ fn main() -> Result<()> {
         args.proc_scan_interval,
         args.ollama_port,
         args.omlx_port,
+        args.omlx_api_key.clone(),
         args.lmstudio_port,
     )?;
 
